@@ -3,20 +3,20 @@
 echo Making macOS bundle
 set -x
 
-export FBVPDF_BUILD=`git rev-list HEAD --count`
-export PP="fbvpdf-R${FBVPDF_BUILD}-macos.zip"
+export CBVPDF_BUILD=`git rev-list HEAD --count`
+export PP="cbvpdf-R${CBVPDF_BUILD}-macos.zip"
 
 mkdir tmp
 
-D=fbvpdf.app
+D=cbvpdf.app
 PL=$D/Info.plist
 mkdir $D
 if [ -d tmp ]; then
 	rm -rf tmp
 fi
 
-if [ -f fbvpdfInstall.dmg ]; then
-	rm fbvpdfInstall.dmg
+if [ -f cbvpdfInstall.dmg ]; then
+	rm cbvpdfInstall.dmg
 fi
 
 mkdir tmp
@@ -28,10 +28,10 @@ rm -rf $D/Contents/Frameworks/SDL2.framework/Versions/A/Headers/
 rm -rf $D/Contents/Frameworks/SDL2.framework/Headers
 
 cp -v Info.plist $D/Contents
-cp -v build/release/mupdf-macos $D/Contents/MacOS/fbvpdf
-cp -v icon-128.png $D/Contents/Resources/fbvpdf.icns
+cp -v build/release/mupdf-macos $D/Contents/MacOS/cbvpdf
+cp -v icon-128.png $D/Contents/Resources/cbvpdf.icns
 
-install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2 $D/Contents/MacOS/fbvpdf
+install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2 $D/Contents/MacOS/cbvpdf
 
 echo "Done"
 

@@ -9,7 +9,7 @@ MR=$?
 if [ $MR -eq 0 ]; then
 	mv build/release/mupdf-gl build/release/mupdf-macos
 	./make-macos-bundle.sh
-	cp Info.plist fbvpdf.app/Contents
-#	/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f fbvpdf.app
+	cp Info.plist cbvpdf.app/Contents
+#	/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f cbvpdf.app
 fi
 exit $MR

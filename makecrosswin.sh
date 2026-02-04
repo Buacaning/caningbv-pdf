@@ -8,7 +8,7 @@ set -x
 
 export G=`git rev-list HEAD --count`
 echo $G
-ZPR="fbvpdf-R${G}-win.zip"
+ZPR="cbvpdf-R${G}-win.zip"
 
 echo "Make clean..."
 make -f Makefile.general clean
@@ -25,11 +25,11 @@ make -f Makefile.mingw OS=w64_x86-cross-mingw32 GIT_BUILD='${G}'  $1
 MR=$?
 if [ $MR -eq 0 ]; then
 	mv build/release/mupdf-gl build/release/mupdf-win.exe
-	if [ -d fbvpdf ]; then
-		rm -rf fbvpdf
+	if [ -d cbvpdf ]; then
+		rm -rf cbvpdf
 	fi
-	mkdir fbvpdf
-	cp build/release/mupdf-win.exe fbvpdf/fbvpdf.exe
+	mkdir cbvpdf
+	cp build/release/mupdf-win.exe cbvpdf/cbvpdf.exe
 	zip -r ${ZPR} fbvpdf
 fi
 exit $MR

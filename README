@@ -1,9 +1,9 @@
 ABOUT
 
-fbvpdf is a specifically crafted version of the MuPDF lightweight open source
+cbvpdf is a specifically crafted version of the MuPDF lightweight open source
 PDF framework to work with electronic schematics.
 
-fbvpdf is not intended to be a general purpose PDF viewer.
+cbvpdf is not intended to be a general purpose PDF viewer.
 
 
 LICENSE

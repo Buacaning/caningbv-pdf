@@ -65,7 +65,7 @@ cd caningbv-pdf
 
 # Output
 # Build products will be in build/ directory
-# Application bundle: fbvpdf.app
+# Application bundle: cbvpdf.app
 ```
 
 ## Usage
@@ -74,10 +74,10 @@ cd caningbv-pdf
 
 ```bash
 # Open a PDF file
-./fbvpdf.app/Contents/MacOS/fbvpdf schematic.pdf
+./cbvpdf.app/Contents/MacOS/cbvpdf schematic.pdf
 
 # With DDI protocol (for external integration)
-./fbvpdf.app/Contents/MacOS/fbvpdf -i schematic.pdf -p /tmp/ddi_pipe
+./cbvpdf.app/Contents/MacOS/cbvpdf -i schematic.pdf -p /tmp/ddi_pipe
 ```
 
 ### Command Line Options
@@ -106,7 +106,7 @@ CBVPDF supports the Dynamic Data Interface (DDI) protocol for bidirectional comm
 mkfifo /tmp/cbvpdf_ddi
 
 # Launch CBVPDF with DDI
-./fbvpdf.app/Contents/MacOS/fbvpdf -i schematic.pdf -p /tmp/cbvpdf_ddi &
+./cbvpdf.app/Contents/MacOS/cbvpdf -i schematic.pdf -p /tmp/cbvpdf_ddi &
 
 # Send commands to CBVPDF
 echo "GOTO_PAGE:5" > /tmp/cbvpdf_ddi

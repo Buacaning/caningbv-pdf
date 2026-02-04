@@ -152,7 +152,7 @@ void getexepath( char *fullpath, size_t bs ) {
 	 uint32_t pbs = sizeof(pathbuf);
 
 	_NSGetExecutablePath(pathbuf, &pbs);
-	p = strcasestr(pathbuf, "fbvpdf.app");
+	p = strcasestr(pathbuf, "cbvpdf.app");
 	if (p) *p = '\0';
 	snprintf(fullpath, bs, "%s", pathbuf);
 	return;
@@ -274,7 +274,7 @@ static const int zoom_list[] = {18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288,
 #define SEARCH_FLAG_NOTFOUND 4
 #define SEARCH_FLAG_HEURISTICS 8
 
-#define FLOG_FILENAME "fbvpdf.log"
+#define FLOG_FILENAME "cbvpdf.log"
 
 static char flog_filename[4096];
 
@@ -311,7 +311,7 @@ static int raise_on_search     = 0;
 static int detached            = 0; // if we talk back via DDI or not
 static int search_heuristics   = 0;
 static int scroll_wheel_swap   = 0;
-static char *ddiprefix         = "fbvpdf";
+static char *ddiprefix         = "cbvpdf";
 static char *ddiloadstr        = NULL;
 static int ddi_simulate_option = DDI_SIMULATE_OPTION_NONE;
 //static int document_has_hits   = 0;
@@ -2868,7 +2868,7 @@ const char *ui_get_clipboard(void) {
 }
 
 static void usage(const char *argv0) {
-	fprintf(stderr, "fbvpdf version %s\n", FZ_VERSION);
+	fprintf(stderr, "cbvpdf version %s\n", FZ_VERSION);
 	fprintf(stderr, "usage: %s [options] document [page]\n", argv0);
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
@@ -3012,7 +3012,7 @@ int main(int argc, char **argv)
 
 	//debug = 1;
 	getexepath(exepath, sizeof(exepath));
-	snprintf(flogpath,sizeof(flogpath),"%s/fbvpdf.log", exepath);
+	snprintf(flogpath,sizeof(flogpath),"%s/cbvpdf.log", exepath);
 	flog_init(flogpath);
 	flog("Start.\r\n");
 
@@ -3362,7 +3362,7 @@ int main(int argc, char **argv)
 #endif
 			}
 
-				// puts fbvpdf to sleep if nothing is happening.
+				// puts cbvpdf to sleep if nothing is happening.
 				//
 
 		} // while !doquit

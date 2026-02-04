@@ -1,0 +1,76 @@
+language: C
+git:
+  depth: 9999999
+os:
+- linux
+compiler:
+- clang
+matrix:
+  include:
+  - os: osx
+    osx_image: xcode9.3
+    compiler: clang
+    env: VERS=macos DEPLOY=yes
+  - os: linux
+    compiler: gcc
+    env: VERS=win DEPLOY=yes
+  - os: linux
+    compiler: gcc
+    env: VERS=linux DEPLOY=yes
+dist: trusty
+sudo: required
+branches:
+  only: master
+install: |-
+  if [ "$VERS" == "win" ] # Cross compiling for Windows
+  then
+    sudo add-apt-repository "deb http://fr.archive.ubuntu.com/ubuntu/ xenial main restricted universe multiverse" # We need an up-to-date MinGW
+    sudo apt-get update
+    sudo apt-get -qy install libsdl2-dev rpm libegl1-mesa-dev libgles2-mesa-dev libxi-dev libxrandr-dev freeglut3
+    sudo apt-get install -t xenial gcc-mingw-w64-i686 g++-mingw-w64-i686 mingw32-runtime
+  elif [ "$VERS" == "linux" ]
+  then
+    sudo apt-get -qy install libsdl2-dev rpm libegl1-mesa-dev libgles2-mesa-dev libxi-dev libxrandr-dev freeglut3  # freeglut probably pulls libxi-dev in
+  elif [ "$VERS" == "macos" ]
+  then
+    echo "Building macOS"
+    brew install sdl2
+  fi
+script: |-
+  if [ "$VERS" == "win" ]
+  then
+    ./makecrosswin.sh || exit 1
+  elif [ "$VERS" == "linux" ]
+  then
+    if [ "$CXX" == "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
+    ./makelinux.sh || exit 1
+  elif [ "$VERS" == "macos" ]
+  then
+    if [ "$CXX" == "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
+    ./makemacos.sh || exit 1
+  fi
+before_deploy: |-
+  if [ "$VERS" == "macos" ]
+  then
+    export DEPLOY_BIN=$(ls fbvpdf*macos.zip)
+    export DEPLOY_PKG=fbvpdf.dmg
+  elif [ "$VERS" == "win" ]
+  then
+    export DEPLOY_BIN=fbvpdf/fbvpdf.exe
+    export DEPLOY_PKG=$(ls fbvpdf*win.zip)
+  elif [ "$VERS" == "linux" ]
+  then
+    export DEPLOY_BIN=fbvpdf/fbvpdf
+    export DEPLOY_PKG=$(ls fbvpdf*tar.gz)
+  fi
+deploy:
+  provider: releases
+  api_key:
+    secure: bpfjkPPg35FIneJ+eM4tpL7Z/0U8kmcJ4JPON8t/eKVpGxszQcqCC92i060w7+zw3OSNI1/YIAWt/y9vIhVuv0jFpT6sNn5uJqMPokOmnGKw7VmV77XhTTEupdpNfTKozZpQ+BrsI2wnQMfFcwmbRfgKG47H4uSi4h7m8QYBuhyKcOQ3DeSta69wZMqbJEHOOMuEhOW21iNJ65nlGXA9likXttR1d/kU12MrBtFO9kCG22oNQxLy8l36r04AhwMI4WbKfyKD6Ma6pDbpMpWoiuYFl5fOZgA9WBVjUvhJXf84csX+DDJLcKleNfvKL+Hx7XZ59LiLBIX2uHmnnjV+K4muoksEP5luaCx1M7S7chE9sYRi2AM/nlKCIwTBveFe35HKCxDL5T0DFyFzx6pWoMIXF4IXuTKZiQb/ErRFnlgLfVw6LPqgvn7rDg7MumDjxfirrqHUK1MRkNufDhPxWVdfzeb9ojH/iN2puYcnqrgXSGu7tdvkeLUR+cX8TJFEU/VB5gHmHGiWP6OhDwojgp6TOUjpLW+xoCoXv/vTq338ZpD2T3845/7XlPI16G8ypAvT9r4QDBQccEkL5cCvuujzheUKpsk2WIrRSIOxyustQ8bAikcyXlc7AQAsSw/T44huAYO2+Mfvd9Y0J2SNDAxb9+NNbT502Xom2kzoJLg=
+  file:
+    - "${DEPLOY_BIN}"
+    - "${DEPLOY_PKG}"
+  skip_cleanup: true
+  on:
+    all_branches: true
+    repo: inflex/fbvpdf

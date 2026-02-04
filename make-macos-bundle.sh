@@ -35,8 +35,8 @@ install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @executable_path
 
 echo "Done"
 
-#hdiutil create tmp/tmp.dmg -ov -volname "FlexBV PDF Viewer" -fs HFS+ -srcfolder fbvpdf.app
-#hdiutil convert tmp/tmp.dmg -format UDZO -o fbvpdf.dmg
+#hdiutil create tmp/tmp.dmg -ov -volname "Caning PDF Viewer" -fs HFS+ -srcfolder cbvpdf.app
+#hdiutil convert tmp/tmp.dmg -format UDZO -o cbvpdf.dmg
 
 #zip -r ${PP} $D
 #ls -la ${PP}

@@ -3124,7 +3124,7 @@ int main(int argc, char **argv)
 	}
 
 	/*
-	 * If fbvpdf is being invoked in headless mode
+	 * If cbvpdf is being invoked in headless mode
 	 * then we only need to do the search string check
 	 * and report back before exiting out
 	 *
@@ -3217,7 +3217,7 @@ int main(int argc, char **argv)
 	//	shrinkwrap();
 
 	/*
-	 * NORMAL run mode,  this is when fbvpdf is being
+	 * NORMAL run mode,  this is when cbvpdf is being
 	 * used as a viewer for the user, as opposed to
 	 * being used as a headless search engine
 	 *

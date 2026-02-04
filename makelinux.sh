@@ -20,6 +20,6 @@ if [ $MR -eq 0 ]; then
 	fi
 	mkdir cbvpdf
 	cp build/release/mupdf-linux cbvpdf/cbvpdf
-	tar zcvf ${ZPR} fbvpdf
+	tar zcvf ${ZPR} cbvpdf
 fi
 exit $MR

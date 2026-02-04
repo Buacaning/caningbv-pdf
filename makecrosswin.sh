@@ -30,6 +30,6 @@ if [ $MR -eq 0 ]; then
 	fi
 	mkdir cbvpdf
 	cp build/release/mupdf-win.exe cbvpdf/cbvpdf.exe
-	zip -r ${ZPR} fbvpdf
+	zip -r ${ZPR} cbvpdf
 fi
 exit $MR

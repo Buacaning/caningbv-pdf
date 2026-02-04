@@ -82,8 +82,8 @@ char *pdfapp_usage(pdfapp_t *app)
 		"L\t\t-- rotate left\n"
 		"R\t\t-- rotate right\n"
 		"h\t\t-- scroll left\n"
-		"j down\t\t-- scroll down\n"
-		"k up\t\t-- scroll up\n"
+		"j down pgdn\t-- scroll down / next page\n"
+		"k up pgup\t-- scroll up / previous page\n"
 		"l\t\t-- scroll right\n"
 		"+\t\t-- zoom in\n"
 		"-\t\t-- zoom out\n"
@@ -95,8 +95,8 @@ char *pdfapp_usage(pdfapp_t *app)
 		"w\t\t-- shrinkwrap\n"
 		"f\t\t-- fullscreen\n"
 		"r\t\t-- reload file\n"
-		". pgdn right spc\t-- next page\n"
-		", pgup left b bkspc\t-- previous page\n"
+		". right spc\t-- next page\n"
+		", left b bkspc\t-- previous page\n"
 		">\t\t-- next 10 pages\n"
 		"<\t\t-- back 10 pages\n"
 		"m\t\t-- mark page for snap back\n"
@@ -112,6 +112,10 @@ char *pdfapp_usage(pdfapp_t *app)
 		"c\t\t-- toggle between color and grayscale\n"
 		"i\t\t-- toggle inverted color mode\n"
 		"q\t\t-- quit\n"
+		"\n"
+		"CBV MODIFICATIONS:\n"
+		"- PageUp/PageDown keys act as k/j (scroll up/down)\n"
+		"- Mouse scroll: forward=zoom out, backward=zoom in\n"
 	;
 }
 
@@ -1557,61 +1561,17 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 static void handlescroll(pdfapp_t *app, int modifiers, int dir)
 {
 	app->ispanning = app->iscopying = 0;
-	if (modifiers & (1<<2))
-	{
-		/* zoom in/out if ctrl is pressed */
-		if (dir < 0)
-			app->resolution = zoom_in(app->resolution);
-		else
-			app->resolution = zoom_out(app->resolution);
-		if (app->resolution > MAXRES)
-			app->resolution = MAXRES;
-		if (app->resolution < MINRES)
-			app->resolution = MINRES;
-		pdfapp_showpage(app, 0, 1, 1, 0, 0);
-	}
+	/* CBV: Scroll wheel always zooms (no Ctrl needed) */
+	/* CBV: scroll forward (dir>0) = zoom out, scroll backward (dir<0) = zoom in */
+	if (dir < 0)
+		app->resolution = zoom_in(app->resolution);
 	else
-	{
-		/* scroll up/down, or left/right if
-		shift is pressed */
-		int w = fz_pixmap_width(app->ctx, app->image);
-		int h = fz_pixmap_height(app->ctx, app->image);
-		int xstep = 0;
-		int ystep = 0;
-		int pagestep = 0;
-		if (modifiers & (1<<0))
-		{
-			if (dir > 0 && app->panx >= 0)
-				pagestep = -1;
-			else if (dir < 0 && app->panx <= app->winw - w)
-				pagestep = 1;
-			else
-				xstep = 20 * dir;
-		}
-		else
-		{
-			if (dir > 0 && app->pany >= 0)
-				pagestep = -1;
-			else if (dir < 0 && app->pany <= app->winh - h)
-				pagestep = 1;
-			else
-				ystep = 20 * dir;
-		}
-		if (pagestep == 0)
-			pdfapp_panview(app, app->panx + xstep, app->pany + ystep);
-		else if (pagestep > 0 && app->pageno < app->pagecount)
-		{
-			app->pageno++;
-			app->pany = 0;
-			pdfapp_showpage(app, 1, 1, 1, 0, 0);
-		}
-		else if (pagestep < 0 && app->pageno > 1)
-		{
-			app->pageno--;
-			app->pany = INT_MIN;
-			pdfapp_showpage(app, 1, 1, 1, 0, 0);
-		}
-	}
+		app->resolution = zoom_out(app->resolution);
+	if (app->resolution > MAXRES)
+		app->resolution = MAXRES;
+	if (app->resolution < MINRES)
+		app->resolution = MINRES;
+	pdfapp_showpage(app, 0, 1, 1, 0, 0);
 }
 
 void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int state)

@@ -987,11 +987,11 @@ int main(int argc, char **argv)
 
 					case XK_Page_Up:
 					case XF86XK_Back:
-						len = 1; buf[0] = ',';
+						len = 1; buf[0] = 'k';  /* CBV: PageUp -> k (scroll up) */
 						break;
 					case XK_Page_Down:
 					case XF86XK_Forward:
-						len = 1; buf[0] = '.';
+						len = 1; buf[0] = 'j';  /* CBV: PageDown -> j (scroll down) */
 						break;
 					}
 				if (xevt.xkey.state & ControlMask && keysym == XK_c)

@@ -1098,7 +1098,9 @@ int IsKeyPressed ( int index ) {
 
 	// Debug for PGUP/PGDN keys
 	if ((index == PDFK_PGUP) || (index == PDFK_PGDN)) {
-		flog("%s:%d: IsKeyPressed check - index=%d, scancode=%d, map_key=%d\n", FL, index, ui.scancode, keyboard_map[index].key);
+		flog("%s:%d: IsKeyPressed check - index=%d (%s), ui.scancode=%d, map_key=%d\n", 
+			FL, index, (index == PDFK_PGUP) ? "PGUP" : "PGDN", 
+			ui.scancode, keyboard_map[index].key);
 	}
 
 	if (ui.scancode == keyboard_map[index].key ) {
@@ -1361,8 +1363,8 @@ static int do_status_footer(void) {
 	} else {
 		char a[20],b[20],c[20];
 		char d[20],e[20],f[20],g[20];
-		// CBV: Changed status bar to show j/k for page navigation
-		snprintf(ss, sizeof(ss), "[ F1 = HELP | Search=%s, Next=%s, Prev=%s | pageup=%s, pagedown=%s | Rotate CW=%s, CCW=%s ]"
+		// CBV: Changed status bar to show j/k for page navigation (K=PageUp, J=PageDown)
+		snprintf(ss, sizeof(ss), "[ F1=HELP | Srch=%s, Nxt=%s, Prv=%s | PgUp=%s(K), PgDn=%s(J) | RotCW=%s, CCW=%s ]"
 				, KEYB_combo_to_string(a, sizeof(a), keyboard_map[PDFK_SEARCH])
 				, KEYB_combo_to_string(d, sizeof(d), keyboard_map[PDFK_SEARCH_NEXT])
 				, KEYB_combo_to_string(e, sizeof(e), keyboard_map[PDFK_SEARCH_PREV])
@@ -1744,8 +1746,12 @@ int ddi_process(char *ddi_data) {
 	keyboard_map[PDFK_SEARCH_NEXT_PAGE].key = keyboard_map[PDFK_SEARCH_NEXT].key;
 	keyboard_map[PDFK_SEARCH_NEXT_PAGE].mods = keyboard_map[PDFK_SEARCH_NEXT].mods | KEYB_MOD_SHIFT;
 
+	flog("%s:%d: DDI BEFORE - PGUP key=%d, PGDN key=%d\r\n", FL, 
+		keyboard_map[PDFK_PGUP].key, keyboard_map[PDFK_PGDN].key);
 	ddi_process_keymap(ddi_data, "!keypgup=", PDFK_PGUP);
 	ddi_process_keymap(ddi_data, "!keypgdn=", PDFK_PGDN);
+	flog("%s:%d: DDI AFTER - PGUP key=%d, PGDN key=%d\r\n", FL, 
+		keyboard_map[PDFK_PGUP].key, keyboard_map[PDFK_PGDN].key);
 
 	keyboard_map[PDFK_PGUP_10].key = keyboard_map[PDFK_PGUP].key;
 	keyboard_map[PDFK_PGUP_10].mods = keyboard_map[PDFK_PGUP].mods | KEYB_MOD_SHIFT;
@@ -2634,21 +2640,9 @@ static void on_wheel(int direction, int x, int y) {
 		tx = (tsx + x);
 		ty = (tsy + y);
 
-		// CBV: Reversed zoom - up wheel = zoom out, down wheel = zoom in
+		// CBV: Scroll wheel zoom - up = zoom in, down = zoom out
 		if (direction > 0) {
-			// Up wheel -> Zoom OUT
-			currentzoom /= pct;
-			if (currentzoom < MINRES) {
-				currentzoom = MINRES;
-				return;
-			}
-			desx = tx / pct;
-			desy = ty / pct;
-			tsx += desx - tx;
-			tsy += desy - ty;
-
-		} else {
-			// Down wheel -> Zoom IN
+			// Up wheel -> Zoom IN
 			currentzoom *= pct;
 			if (currentzoom > MAXRES) {
 				currentzoom = MAXRES;
@@ -2656,6 +2650,18 @@ static void on_wheel(int direction, int x, int y) {
 			}
 			desx = tx * pct;
 			desy = ty * pct;
+			tsx += desx - tx;
+			tsy += desy - ty;
+
+		} else {
+			// Down wheel -> Zoom OUT
+			currentzoom /= pct;
+			if (currentzoom < MINRES) {
+				currentzoom = MINRES;
+				return;
+			}
+			desx = tx / pct;
+			desy = ty / pct;
 			tsx += desx - tx;
 			tsy += desy - ty;
 		}
@@ -3054,6 +3060,9 @@ int main(int argc, char **argv)
 	// CBV: Changed PageUp/PageDown to k/j (vim style)
 	keyboard_map[PDFK_PGUP].key = SDL_SCANCODE_K;
 	keyboard_map[PDFK_PGDN].key = SDL_SCANCODE_J;
+	flog("%s:%d: INIT - PGUP key=%d (K=%d), PGDN key=%d (J=%d)\r\n", FL, 
+		keyboard_map[PDFK_PGUP].key, SDL_SCANCODE_K,
+		keyboard_map[PDFK_PGDN].key, SDL_SCANCODE_J);
 
 	keyboard_map[PDFK_PGUP_10].key = SDL_SCANCODE_PAGEUP;
 	keyboard_map[PDFK_PGUP_10].mods = KEYB_MOD_SHIFT;
@@ -3081,7 +3090,7 @@ int main(int argc, char **argv)
 	process_start_time = time(NULL); // used to discriminate if we're picking up old !quit: calls.
 
 	flog("Parsing parameters\r\n");
-	while ((c = fz_getopt(argc, argv, "p:r:i:s:IsW:H:S:U:X:D:")) != -1) {
+	while ((c = fz_getopt(argc, argv, "p:r:i:s:IsW:H:S:U:X:D:d")) != -1) {
 		switch (c) {
 			default: usage(argv[0]); break;
 			case 'i': snprintf(filename, sizeof(filename), "%s", fz_optarg); break;
@@ -3295,6 +3304,8 @@ int main(int argc, char **argv)
 												 ui.key = sdlEvent.key.keysym.sym;
 												 ui.scancode = sdlEvent.key.keysym.scancode;
 												 ui.mod = SDL_GetModState();
+												 flog("%s:%d: KEYDOWN - scancode=%d (J=%d, K=%d), sym=%d\r\n", 
+													FL, ui.scancode, SDL_SCANCODE_J, SDL_SCANCODE_K, ui.key);
 												 do_keypress();
 												 break;
 

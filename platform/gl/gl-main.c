@@ -1357,7 +1357,7 @@ static int do_status_footer(void) {
 		char a[20],b[20],c[20];
 		char d[20],e[20],f[20],g[20];
 		// CBV: Changed status bar to show j/k for page navigation
-		snprintf(ss, sizeof(ss), "[ F1 = HELP | Search=%s, Next=%s, Prev=%s | pageup=k, pagedown=j | Rotate CW=%s, CCW=%s ]"
+		snprintf(ss, sizeof(ss), "[ F1 = HELP | Search=%s, Next=%s, Prev=%s | pageup=%s, pagedown=%s | Rotate CW=%s, CCW=%s ]"
 				, KEYB_combo_to_string(a, sizeof(a), keyboard_map[PDFK_SEARCH])
 				, KEYB_combo_to_string(d, sizeof(d), keyboard_map[PDFK_SEARCH_NEXT])
 				, KEYB_combo_to_string(e, sizeof(e), keyboard_map[PDFK_SEARCH_PREV])
@@ -2607,7 +2607,8 @@ static void on_wheel(int direction, int x, int y) {
 	 *
 	 */
 
-	if (!(SDL_GetModState() & KMOD_CTRL) != (!scroll_wheel_swap)) {
+	// CBV: Changed default - scroll wheel always zooms (no Ctrl needed)
+	if (1) {
 
 		/*
 		 * ZOOM modfication

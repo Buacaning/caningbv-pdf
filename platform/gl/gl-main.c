@@ -1096,6 +1096,11 @@ void ui_set_keypress( int idx ) {
 
 int IsKeyPressed ( int index ) {
 
+	// Debug for PGUP/PGDN keys
+	if ((index == PDFK_PGUP) || (index == PDFK_PGDN)) {
+		flog("%s:%d: IsKeyPressed check - index=%d, scancode=%d, map_key=%d\n", FL, index, ui.scancode, keyboard_map[index].key);
+	}
+
 	if (ui.scancode == keyboard_map[index].key ) {
 		uint8_t modmap = 0;
 

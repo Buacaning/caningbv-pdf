@@ -1253,7 +1253,19 @@ static void do_keypress(void) {
 	}
 
 	if (!ui.focus && ui.key && ui.plain) {
-		flog("%s:%d: Acting on key '0x%08x' '%c' (mod='%0x')\r\n", FL, ui.key, ui.key, ui.mod);
+		static int last_key_was_g = 0;
+		
+		// CBV: Handle 'gg' for go to first page
+		if (ui.key == 'g' && !last_key_was_g) {
+			last_key_was_g = 1;
+		} else if (ui.key == 'g' && last_key_was_g) {
+			// 'gg' detected - go to page 1
+			jump_to_page(0);
+			last_key_was_g = 0;
+		} else {
+			last_key_was_g = 0;
+		}
+		
 		switch (ui.key) {
 			case SDLK_ESCAPE: clear_search(); break;
 
@@ -1261,8 +1273,7 @@ static void do_keypress(void) {
 
 		if (ui.key >= '0' && ui.key <= '9') {
 			number = number * 10 + ui.key - '0';
-			flog("%s:%d: number = %d\r\n", FL, number);
-		} else {
+		} else if (ui.key != 'g') {  // Don't reset for 'g' (handled above)
 			number = 0;
 		}
 
@@ -1738,12 +1749,8 @@ int ddi_process(char *ddi_data) {
 	keyboard_map[PDFK_SEARCH_NEXT_PAGE].key = keyboard_map[PDFK_SEARCH_NEXT].key;
 	keyboard_map[PDFK_SEARCH_NEXT_PAGE].mods = keyboard_map[PDFK_SEARCH_NEXT].mods | KEYB_MOD_SHIFT;
 
-	flog("%s:%d: DDI BEFORE - PGUP key=%d, PGDN key=%d\r\n", FL, 
-		keyboard_map[PDFK_PGUP].key, keyboard_map[PDFK_PGDN].key);
 	ddi_process_keymap(ddi_data, "!keypgup=", PDFK_PGUP);
 	ddi_process_keymap(ddi_data, "!keypgdn=", PDFK_PGDN);
-	flog("%s:%d: DDI AFTER - PGUP key=%d, PGDN key=%d\r\n", FL, 
-		keyboard_map[PDFK_PGUP].key, keyboard_map[PDFK_PGDN].key);
 
 	keyboard_map[PDFK_PGUP_10].key = keyboard_map[PDFK_PGUP].key;
 	keyboard_map[PDFK_PGUP_10].mods = keyboard_map[PDFK_PGUP].mods | KEYB_MOD_SHIFT;
@@ -3033,16 +3040,20 @@ int main(int argc, char **argv)
 	keyboard_map[PDFK_HELP].key = SDL_SCANCODE_SLASH;
 	keyboard_map[PDFK_HELP].mods = KEYB_MOD_SHIFT;  // ? = Shift+/
 
-	keyboard_map[PDFK_SEARCH].key = SDL_SCANCODE_F;
-	keyboard_map[PDFK_SEARCH].mods = KEYB_MOD_CTRL;
+	// CBV: Vim-style search keys
+	keyboard_map[PDFK_SEARCH].key = SDL_SCANCODE_SLASH;      // / = search
+	keyboard_map[PDFK_SEARCH].mods = 0;
 
-	keyboard_map[PDFK_SEARCH_NEXT].key = SDL_SCANCODE_N;
-	keyboard_map[PDFK_SEARCH_PREV].key = SDL_SCANCODE_P;
+	keyboard_map[PDFK_SEARCH_NEXT].key = SDL_SCANCODE_N;      // n = next
+	keyboard_map[PDFK_SEARCH_NEXT].mods = 0;
+
+	keyboard_map[PDFK_SEARCH_PREV].key = SDL_SCANCODE_N;      // N = prev
+	keyboard_map[PDFK_SEARCH_PREV].mods = KEYB_MOD_SHIFT;
 
 	keyboard_map[PDFK_SEARCH_NEXT_PAGE].key = SDL_SCANCODE_N;
 	keyboard_map[PDFK_SEARCH_NEXT_PAGE].mods = KEYB_MOD_SHIFT;
 
-	keyboard_map[PDFK_SEARCH_PREV_PAGE].key = SDL_SCANCODE_P;
+	keyboard_map[PDFK_SEARCH_PREV_PAGE].key = SDL_SCANCODE_N;
 	keyboard_map[PDFK_SEARCH_PREV_PAGE].mods = KEYB_MOD_SHIFT;
 
 	keyboard_map[PDFK_PAN_UP].key = SDL_SCANCODE_UP;
@@ -3053,9 +3064,6 @@ int main(int argc, char **argv)
 	// CBV: Changed PageUp/PageDown to k/j (vim style)
 	keyboard_map[PDFK_PGUP].key = SDL_SCANCODE_K;
 	keyboard_map[PDFK_PGDN].key = SDL_SCANCODE_J;
-	flog("%s:%d: INIT - PGUP key=%d (K=%d), PGDN key=%d (J=%d)\r\n", FL, 
-		keyboard_map[PDFK_PGUP].key, SDL_SCANCODE_K,
-		keyboard_map[PDFK_PGDN].key, SDL_SCANCODE_J);
 
 	keyboard_map[PDFK_PGUP_10].key = SDL_SCANCODE_PAGEUP;
 	keyboard_map[PDFK_PGUP_10].mods = KEYB_MOD_SHIFT;

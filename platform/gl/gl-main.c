@@ -315,6 +315,7 @@ static int detached            = 0; // if we talk back via DDI or not
 static int search_heuristics   = 0;
 static int scroll_wheel_swap   = 0;
 static char *ddiprefix         = "cbvpdf";
+static char *zmqendpoint       = NULL;  // CBV: ZMQ endpoint for DDI communication
 static char *ddiloadstr        = NULL;
 static int ddi_simulate_option = DDI_SIMULATE_OPTION_NONE;
 //static int document_has_hits   = 0;
@@ -3107,7 +3108,8 @@ static void usage(const char *argv0) {
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
 	fprintf(stderr, "\t-I\tinvert colors\n");
-	fprintf(stderr, "\t-D\t<ddi prefix>\n");
+	fprintf(stderr, "\t-D\t<ddi prefix> (file-based DDI)\n");
+	fprintf(stderr, "\t-Z\t<zmq endpoint> (ZeroMQ DDI, e.g., tcp://127.0.0.1:12345)\n");
 	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
 	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
 	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
@@ -3317,7 +3319,7 @@ int main(int argc, char **argv)
 	process_start_time = time(NULL); // used to discriminate if we're picking up old !quit: calls.
 
 	flog("Parsing parameters\r\n");
-	while ((c = fz_getopt(argc, argv, "p:r:i:s:IsW:H:S:U:X:D:d")) != -1) {
+	while ((c = fz_getopt(argc, argv, "p:r:i:s:IsW:H:S:U:X:D:Z:d")) != -1) {
 		switch (c) {
 			default: usage(argv[0]); break;
 			case 'i': snprintf(filename, sizeof(filename), "%s", fz_optarg); break;
@@ -3330,6 +3332,7 @@ int main(int argc, char **argv)
 			case 'U': layout_css = fz_optarg; break;
 			case 'X': layout_use_doc_css = 0; break;
 			case 'D': ddiprefix = fz_optarg; break;
+			case 'Z': zmqendpoint = fz_optarg; break;  // CBV: ZMQ endpoint
 			case 's': ddiloadstr = fz_optarg; break;
 			case 'd': debug = 1; break;
 		}
@@ -3341,8 +3344,20 @@ int main(int argc, char **argv)
 	/* ddi setup */
 	flog("DDI setup '%s'\r\n", ddiprefix);
 	DDI_init(&ddi);
-	DDI_set_prefix(&ddi, ddiprefix);
-	DDI_set_mode(&ddi, DDI_MODE_SLAVE);
+	
+	// CBV: Use ZMQ if endpoint provided, otherwise fall back to file-based
+	if (zmqendpoint) {
+		flog("CBV: Using ZMQ endpoint: %s\r\n", zmqendpoint);
+		DDI_set_zmq_endpoint(&ddi, zmqendpoint);
+		if (DDI_zmq_init(&ddi) != 0) {
+			flog("CBV: ZMQ init failed, falling back to file-based DDI\r\n");
+			DDI_set_prefix(&ddi, ddiprefix);
+			DDI_set_mode(&ddi, DDI_MODE_SLAVE);
+		}
+	} else {
+		DDI_set_prefix(&ddi, ddiprefix);
+		DDI_set_mode(&ddi, DDI_MODE_SLAVE);
+	}
 
 	/*
 	 * DDI setup package, is the first one we receive

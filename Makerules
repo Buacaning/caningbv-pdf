@@ -87,6 +87,13 @@ AR = xcrun ar
 LD = xcrun ld
 RANLIB_CMD = xcrun ranlib $@
 
+# CBV: ZeroMQ detection via pkg-config (brew install zeromq)
+ifeq "$(shell pkg-config --exists libzmq && echo yes)" "yes"
+HAVE_ZMQ := yes
+SYS_ZMQ_CFLAGS := -DENABLE_ZMQ $(shell pkg-config --cflags libzmq)
+SYS_ZMQ_LIBS := $(shell pkg-config --libs libzmq)
+endif
+
 # Linux uses pkg-config for system libraries.
 else ifeq "$(OS)" "Linux"
 

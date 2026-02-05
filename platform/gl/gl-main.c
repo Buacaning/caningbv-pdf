@@ -2697,6 +2697,71 @@ static void on_mouse(int button, int action, int x, int y, int clicks) {
 		case SDL_BUTTON_RIGHT: ui.right = (action == SDL_MOUSEBUTTONDOWN); break;
 	}
 
+	// CBV: Manual double-click detection for component selection
+	static Uint32 last_click_time = 0;
+	static int last_click_x = 0, last_click_y = 0;
+	static int click_count = 0;
+	const Uint32 DOUBLE_CLICK_TIME = 300;  // ms
+	const int DOUBLE_CLICK_DIST = 10;      // pixels
+	
+	if (button == SDL_BUTTON_LEFT && action == SDL_MOUSEBUTTONDOWN) {
+		Uint32 current_time = SDL_GetTicks();
+		int dx = x - last_click_x;
+		int dy = y - last_click_y;
+		int dist_sq = dx*dx + dy*dy;
+		Uint32 time_diff = current_time - last_click_time;
+		
+		if (time_diff < DOUBLE_CLICK_TIME && dist_sq < DOUBLE_CLICK_DIST*DOUBLE_CLICK_DIST) {
+			click_count++;
+		} else {
+			click_count = 1;
+			last_click_x = x;
+			last_click_y = y;
+		}
+		last_click_time = current_time;
+		
+		// Double-click detected
+		if (click_count == 2) {
+			fprintf(stderr, "CBV: DOUBLE-CLICK detected at (%d,%d)\n", x, y);
+			flog("%s:%d: DOUBLE-CLICK at (%d,%d)\r\n", FL, x, y);
+			fprintf(stderr, "CBV: ctx=%p doc=%p text=%p\n", (void*)ctx, (void*)doc, (void*)text);
+			if (ctx && doc && text) {
+				// Calculate offset exactly like do_page_selection
+				int xofs = canvas_x - scroll_x - page_tex.x;
+				int yofs = canvas_y - scroll_y - page_tex.y;
+				fprintf(stderr, "CBV: offsets: xofs=%d yofs=%d (canvas_x=%d scroll_x=%d)\n", xofs, yofs, canvas_x, scroll_x);
+				
+				fz_point page_a = {x - xofs, y - yofs};
+				fz_point page_b = {x - xofs, y - yofs};
+				fprintf(stderr, "CBV: page coords before transform: %.1f, %.1f\n", page_a.x, page_a.y);
+				
+				fz_transform_point(&page_a, &page_inv_ctm);
+				fz_transform_point(&page_b, &page_inv_ctm);
+				fprintf(stderr, "CBV: page coords after transform: %.1f, %.1f\n", page_a.x, page_a.y);
+				
+				char *s = fz_copy_selection(ctx, text, page_a, page_b, 0);
+				fprintf(stderr, "CBV: fz_copy_selection returned: %p\n", (void*)s);
+				if (s) {
+					fprintf(stderr, "CBV: selected text: '%s'\n", s);
+					char comp[256] = {0};
+					sscanf(s, "%255s", comp);
+					fprintf(stderr, "CBV: parsed component: '%s'\n", comp);
+					if (comp[0]) {
+						char ddi_msg[512];
+						snprintf(ddi_msg, sizeof(ddi_msg), "!compsearch:%s", comp);
+						fprintf(stderr, "CBV: Sending DDI: %s\n", ddi_msg);
+						if (!detached) DDI_dispatch(&ddi, ddi_msg);
+					}
+					fz_free(ctx, s);
+				} else {
+					fprintf(stderr, "CBV: no text selected\n");
+				}
+			} else {
+				fprintf(stderr, "CBV: missing ctx/doc/text\n");
+			}
+		}
+	}
+
 } // on_mouse()
 
 static void on_motion(int x, int y) {

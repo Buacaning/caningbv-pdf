@@ -1846,6 +1846,70 @@ int ddi_process(char *ddi_data) {
 		}
 	}
 
+	// CBV: Handle unified !find: command with all search options
+	// Format: !find:<target>:<details>:<mode>:<term>
+	//   target: C=components, N=nets, B=both
+	//   details: 0=no, 1=yes  
+	//   mode: S=substring, P=prefix, W=whole
+	if ((cmd = strstr(ddi_data, "!find:")) != NULL) {
+		char target = 'C';  // Default: components
+		int details = 0;    // Default: no details
+		char mode = 'S';    // Default: substring
+		char term[512] = {0};
+		
+		// Parse the new format: !find:C:0:S:term
+		char tmp[1024];
+		snprintf(tmp, sizeof(tmp), "%s", cmd + strlen("!find:"));
+		
+		// Extract fields separated by ':'
+		char *p = tmp;
+		char *field = p;
+		int field_num = 0;
+		
+		while (p && *p && field_num < 4) {
+			char *colon = strchr(p, ':');
+			if (colon) *colon = '\0';
+			
+			switch (field_num) {
+				case 0: target = *field; break;  // C, N, or B
+				case 1: details = atoi(field); break;  // 0 or 1
+				case 2: mode = *field; break;  // S, P, or W
+				case 3: snprintf(term, sizeof(term), "%s", field); break;  // search term
+			}
+			
+			if (!colon) break;
+			p = colon + 1;
+			field = p;
+			field_num++;
+		}
+		
+		// Remove trailing newline from term
+		char *nl = strpbrk(term, "\r\n");
+		if (nl) *nl = '\0';
+		
+		flog("%s:%d: !find: target=%c details=%d mode=%c term='%s'\r\n", FL, target, details, mode, term);
+		
+		// For now, use the term for searching regardless of target/details/mode
+		// TODO: BP doesn't have different search modes yet, so we just search for the term
+		if (term[0]) {
+			this_search.mode = SEARCH_MODE_NORMAL;
+			if (strcmp(this_search.search_raw, cmd)==0) {
+				flog("%s:%d: Same !find search as before, simulate 'next' keypress.\n",FL);
+				ui_set_keypress(PDFK_SEARCH_NEXT);
+				do_keypress();
+			} else {
+				snprintf(this_search.search_raw, sizeof(this_search.search_raw), "%s", cmd);
+				snprintf(this_search.a, sizeof(this_search.a), "%s", term);
+				this_search.active = 1;
+				this_search.direction = 1;
+				this_search.not_found = 0;
+				this_search.has_hits = 0;
+				this_search.page = 0;
+				flog("%s:%d: !find search started for: %s\r\n", FL, term);
+			}
+		}
+	}
+
 	if ((cmd = strstr(ddi_data, "!compsearch:"))) {
 		/*
 		 * compound search requested.  First we find the page with the
@@ -2819,15 +2883,30 @@ static void on_mouse(int button, int action, int x, int y, int clicks) {
 					if (comp[0]) {
 						char ddi_msg[512];
 						
+						fprintf(stderr, "CBV: DDI mode=%d, detached=%d, prefix=%s\n", ddi.mode, detached, ddi.prefix);
+						fprintf(stderr, "CBV: DDI pickup_name=%s\n", ddi.pickup_name);
+						
 						// Send component search
 						snprintf(ddi_msg, sizeof(ddi_msg), "!compsearch:%s", comp);
-						fprintf(stderr, "CBV: Sending DDI: %s\n", ddi_msg);
-						if (!detached) DDI_dispatch(&ddi, ddi_msg);
+						fprintf(stderr, "CBV: Sending DDI comp: %s\n", ddi_msg);
+						if (!detached) {
+							int ret = DDI_dispatch(&ddi, ddi_msg);
+							fprintf(stderr, "CBV: DDI_dispatch returned %d\n", ret);
+							// Send acknowledgment back to BV
+							char ack_msg[512];
+							snprintf(ack_msg, sizeof(ack_msg), "!ack:compsearch:%s:OK", comp);
+							DDI_dispatch(&ddi, ack_msg);
+							fprintf(stderr, "CBV: Sent DDI ack: %s\n", ack_msg);						} else {
+							fprintf(stderr, "CBV: SKIPPED (detached)\n");
+						}
 						
 						// Also send net search (for net sync) - BV will handle whichever applies
 						snprintf(ddi_msg, sizeof(ddi_msg), "!netsearch:%s", comp);
-						fprintf(stderr, "CBV: Sending DDI: %s\n", ddi_msg);
-						if (!detached) DDI_dispatch(&ddi, ddi_msg);
+						fprintf(stderr, "CBV: Sending DDI net: %s\n", ddi_msg);
+						if (!detached) {
+							int ret = DDI_dispatch(&ddi, ddi_msg);
+							fprintf(stderr, "CBV: DDI_dispatch returned %d\n", ret);
+						}
 					}
 					fz_free(ctx, s);
 				} else {

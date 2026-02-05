@@ -1356,7 +1356,8 @@ static int do_status_footer(void) {
 	} else {
 		char a[20],b[20],c[20];
 		char d[20],e[20],f[20],g[20];
-		snprintf(ss, sizeof(ss), "[ F1 = HELP | Search=%s, Next=%s, Prev=%s | PgUp=%s, PgDn=%s | Rotate CW=%s, CCW=%s ]"
+		// CBV: Changed status bar to show j/k for page navigation
+		snprintf(ss, sizeof(ss), "[ F1 = HELP | Search=%s, Next=%s, Prev=%s | pageup=k, pagedown=j | Rotate CW=%s, CCW=%s ]"
 				, KEYB_combo_to_string(a, sizeof(a), keyboard_map[PDFK_SEARCH])
 				, KEYB_combo_to_string(d, sizeof(d), keyboard_map[PDFK_SEARCH_NEXT])
 				, KEYB_combo_to_string(e, sizeof(e), keyboard_map[PDFK_SEARCH_PREV])
@@ -2627,27 +2628,28 @@ static void on_wheel(int direction, int x, int y) {
 		tx = (tsx + x);
 		ty = (tsy + y);
 
+		// CBV: Reversed zoom - up wheel = zoom out, down wheel = zoom in
 		if (direction > 0) {
-			currentzoom *= pct;
-			if (currentzoom > MAXRES) {
-				currentzoom = MAXRES;
-//				currentzoom = oz;
-				return;
-			}
-			desx = tx * pct;
-			desy = ty * pct;
-			tsx += desx - tx;
-			tsy += desy - ty;
-
-		} else {
+			// Up wheel -> Zoom OUT
 			currentzoom /= pct;
 			if (currentzoom < MINRES) {
 				currentzoom = MINRES;
-//				currentzoom = oz;
 				return;
 			}
 			desx = tx / pct;
 			desy = ty / pct;
+			tsx += desx - tx;
+			tsy += desy - ty;
+
+		} else {
+			// Down wheel -> Zoom IN
+			currentzoom *= pct;
+			if (currentzoom > MAXRES) {
+				currentzoom = MAXRES;
+				return;
+			}
+			desx = tx * pct;
+			desy = ty * pct;
 			tsx += desx - tx;
 			tsy += desy - ty;
 		}
@@ -3043,8 +3045,9 @@ int main(int argc, char **argv)
 	keyboard_map[PDFK_PAN_LEFT].key = SDL_SCANCODE_LEFT;
 	keyboard_map[PDFK_PAN_RIGHT].key = SDL_SCANCODE_RIGHT;
 
-	keyboard_map[PDFK_PGUP].key = SDL_SCANCODE_PAGEUP;
-	keyboard_map[PDFK_PGDN].key = SDL_SCANCODE_PAGEDOWN;
+	// CBV: Changed PageUp/PageDown to k/j (vim style)
+	keyboard_map[PDFK_PGUP].key = SDL_SCANCODE_K;
+	keyboard_map[PDFK_PGDN].key = SDL_SCANCODE_J;
 
 	keyboard_map[PDFK_PGUP_10].key = SDL_SCANCODE_PAGEUP;
 	keyboard_map[PDFK_PGUP_10].mods = KEYB_MOD_SHIFT;

@@ -1884,6 +1884,28 @@ int ddi_process(char *ddi_data) {
 		flog("%s:%d: elements to comp-search: %s %s %s\r\n", FL, this_search.a, this_search.b, this_search.c);
 	} // compsearch
 
+	// CBV: Handle net search from BV
+	if ((cmd = strstr(ddi_data, "!netsearch:"))) {
+		char tmp[1024];
+		char *p;
+
+		this_search.a[0] = '\0';
+		this_search.mode = SEARCH_MODE_NORMAL;
+		this_search.page = 0;
+		this_search.direction = 1;
+		this_search.active = 1;
+
+		snprintf(tmp, sizeof(tmp), "%s", cmd + strlen("!netsearch:"));
+		snprintf(this_search.a, sizeof(this_search.a), "%s", tmp);
+		this_search.not_found = 0;
+		this_search.has_hits = 0;
+		
+		p = strpbrk(this_search.a, "\r\n");
+		if (p) *p = '\0';
+		
+		flog("%s:%d: net search: %s\r\n", FL, this_search.a);
+	} // netsearch
+
 	return 0;
 } // ddi_process
 
@@ -2796,7 +2818,14 @@ static void on_mouse(int button, int action, int x, int y, int clicks) {
 					fprintf(stderr, "CBV: parsed component: '%s'\n", comp);
 					if (comp[0]) {
 						char ddi_msg[512];
+						
+						// Send component search
 						snprintf(ddi_msg, sizeof(ddi_msg), "!compsearch:%s", comp);
+						fprintf(stderr, "CBV: Sending DDI: %s\n", ddi_msg);
+						if (!detached) DDI_dispatch(&ddi, ddi_msg);
+						
+						// Also send net search (for net sync) - BV will handle whichever applies
+						snprintf(ddi_msg, sizeof(ddi_msg), "!netsearch:%s", comp);
 						fprintf(stderr, "CBV: Sending DDI: %s\n", ddi_msg);
 						if (!detached) DDI_dispatch(&ddi, ddi_msg);
 					}

@@ -84,6 +84,11 @@ static int has_ARB_texture_non_power_of_two = 1;
 //static GLint max_texture_size               = 8192;
 static GLint max_texture_size               = 65536;
 
+// CBV: Double-click visual feedback
+static int dc_highlight_x = 0;
+static int dc_highlight_y = 0;
+static int dc_highlight_frames = 0;
+
 #include <stdio.h>
 
 #ifdef __WIN32
@@ -146,7 +151,7 @@ void getexepath( char *fullpath, size_t bs ) {
 #endif
 
 #ifdef __APPLE__
-    int ret;
+	 int ret;
     pid_t pid; 
     char pathbuf[4096], *p;
 	 uint32_t pbs = sizeof(pathbuf);
@@ -157,9 +162,7 @@ void getexepath( char *fullpath, size_t bs ) {
 	snprintf(fullpath, bs, "%s", pathbuf);
 	return;
 #endif
-
 }
-
 
 // Menu handling function declaration
 void menucb(int mitem) {}
@@ -1556,6 +1559,31 @@ static void do_canvas(void) {
 		if (currently_viewed_page == this_search.page && this_search.hit_count_a > 0) do_search_hits(x, y);
 	}
 
+	// CBV: Render double-click highlight if active
+	if (dc_highlight_frames > 0 && text) {
+		int xofs = x - page_tex.x;
+		int yofs = y - page_tex.y;
+		fz_point page_a = {dc_highlight_x, dc_highlight_y};
+		fz_point page_b = {dc_highlight_x, dc_highlight_y};
+		fz_transform_point(&page_a, &page_inv_ctm);
+		fz_transform_point(&page_b, &page_inv_ctm);
+		
+		fz_rect hits[100];
+		int n = fz_highlight_selection(ctx, text, page_a, page_b, hits, nelem(hits));
+		
+		if (n > 0) {
+			glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);
+			glEnable(GL_BLEND);
+			glColor4f(1, 1, 1, 1);
+			for (int i = 0; i < n; ++i) {
+				fz_rect r = hits[i];
+				fz_transform_rect(&r, &page_ctm);
+				glRectf(r.x0 + xofs, r.y0 + yofs, r.x1 + 1 + xofs, r.y1 + 1 + yofs);
+			}
+			glDisable(GL_BLEND);
+		}
+		dc_highlight_frames--;
+	}
 }
 
 int ddi_process_keymap( char *ddi_data, char *keystr, int index ) {
@@ -2738,6 +2766,26 @@ static void on_mouse(int button, int action, int x, int y, int clicks) {
 				fz_transform_point(&page_a, &page_inv_ctm);
 				fz_transform_point(&page_b, &page_inv_ctm);
 				fprintf(stderr, "CBV: page coords after transform: %.1f, %.1f\n", page_a.x, page_a.y);
+				
+				// Visual highlight like right-click
+				fz_rect hits[100];
+				int n = fz_highlight_selection(ctx, text, page_a, page_b, hits, nelem(hits));
+				
+				// Store highlight position for rendering (reuse xofs/yofs from above)
+				dc_highlight_x = x - xofs;
+				dc_highlight_y = y - yofs;
+				dc_highlight_frames = 30; // Show for 30 frames (~0.5s at 60fps)
+				
+				// Draw highlight immediately
+				glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);
+				glEnable(GL_BLEND);
+				glColor4f(1, 1, 1, 1);
+				for (int i = 0; i < n; ++i) {
+					fz_rect r = hits[i];
+					fz_transform_rect(&r, &page_ctm);
+					glRectf(r.x0 + xofs, r.y0 + yofs, r.x1 + 1 + xofs, r.y1 + 1 + yofs);
+				}
+				glDisable(GL_BLEND);
 				
 				char *s = fz_copy_selection(ctx, text, page_a, page_b, 0);
 				fprintf(stderr, "CBV: fz_copy_selection returned: %p\n", (void*)s);

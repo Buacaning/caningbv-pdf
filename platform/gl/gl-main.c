@@ -1096,13 +1096,6 @@ void ui_set_keypress( int idx ) {
 
 int IsKeyPressed ( int index ) {
 
-	// Debug for PGUP/PGDN keys
-	if ((index == PDFK_PGUP) || (index == PDFK_PGDN)) {
-		flog("%s:%d: IsKeyPressed check - index=%d (%s), ui.scancode=%d, map_key=%d\n", 
-			FL, index, (index == PDFK_PGUP) ? "PGUP" : "PGDN", 
-			ui.scancode, keyboard_map[index].key);
-	}
-
 	if (ui.scancode == keyboard_map[index].key ) {
 		uint8_t modmap = 0;
 
@@ -1111,7 +1104,6 @@ int IsKeyPressed ( int index ) {
 		if (ui.mod & KMOD_ALT) modmap |= KEYB_MOD_ALT;
 		if (ui.mod & KMOD_GUI) modmap |= KEYB_MOD_OS;
 
-		//flog("%s:%d: IsKeyPressed(): looking for %x, currently %x\n", FL, keyboard_map[index].mods, modmap);
 		if (keyboard_map[index].mods == modmap) {
 			ui.mod = 0;
 			ui.scancode = 0;
@@ -1457,7 +1449,7 @@ static void do_help(void) {
 	y += ui.lineheight + ui.baseline;
 
 	glColor4f(0, 0, 0, 1);
-	y = do_help_line(x, y, "FlexBV PDF Viewer", "");
+	y = do_help_line(x, y, "CBVPDF", "");
 
 	y = do_help_line(x, y, "App path", exepath);
 	y = do_help_line(x, y, "Log file", flog_filename);
@@ -3086,6 +3078,11 @@ int main(int argc, char **argv)
 	keyboard_map[PDFK_PASTE].key = SDL_SCANCODE_V;
 	keyboard_map[PDFK_PASTE].mods = KEYB_MOD_CTRL;
 
+	// CBV: Add x/h/w for fit modes
+	keyboard_map[PDFK_FITWINDOW].key = SDL_SCANCODE_X;
+	keyboard_map[PDFK_FITHEIGHT].key = SDL_SCANCODE_H;
+	keyboard_map[PDFK_FITWIDTH].key = SDL_SCANCODE_W;
+
 
 
 	process_start_time = time(NULL); // used to discriminate if we're picking up old !quit: calls.
@@ -3305,8 +3302,6 @@ int main(int argc, char **argv)
 												 ui.key = sdlEvent.key.keysym.sym;
 												 ui.scancode = sdlEvent.key.keysym.scancode;
 												 ui.mod = SDL_GetModState();
-												 flog("%s:%d: KEYDOWN - scancode=%d (J=%d, K=%d), sym=%d\r\n", 
-													FL, ui.scancode, SDL_SCANCODE_J, SDL_SCANCODE_K, ui.key);
 												 do_keypress();
 												 break;
 

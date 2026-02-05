@@ -1364,7 +1364,7 @@ static int do_status_footer(void) {
 		char a[20],b[20],c[20];
 		char d[20],e[20],f[20],g[20];
 		// CBV: Changed status bar to show j/k for page navigation (K=PageUp, J=PageDown)
-		snprintf(ss, sizeof(ss), "[ F1=HELP | Srch=%s, Nxt=%s, Prv=%s | PgUp=%s(K), PgDn=%s(J) | RotCW=%s, CCW=%s ]"
+		snprintf(ss, sizeof(ss), "[ ?=HELP | Srch=%s, Nxt=%s, Prv=%s | PgUp=%s(K), PgDn=%s(J) | RotCW=%s, CCW=%s ]"
 				, KEYB_combo_to_string(a, sizeof(a), keyboard_map[PDFK_SEARCH])
 				, KEYB_combo_to_string(d, sizeof(d), keyboard_map[PDFK_SEARCH_NEXT])
 				, KEYB_combo_to_string(e, sizeof(e), keyboard_map[PDFK_SEARCH_PREV])
@@ -1465,7 +1465,7 @@ static void do_help(void) {
 	y = do_help_line(x, y, "Window size", ks);
 
 	y += ui.lineheight;
-	y = do_help_line(x, y, "F1", "show this message");
+	y = do_help_line(x, y, "?", "show this message");
 	KEYB_combo_to_string(ks, sizeof(ks),keyboard_map[PDFK_QUIT]);
 	y = do_help_line(x, y, ks, "Quit");
 	y += ui.lineheight;
@@ -3038,7 +3038,8 @@ int main(int argc, char **argv)
 
 	KEYB_init();
 
-	keyboard_map[PDFK_HELP].key = SDL_SCANCODE_F1;
+	keyboard_map[PDFK_HELP].key = SDL_SCANCODE_SLASH;
+	keyboard_map[PDFK_HELP].mods = KEYB_MOD_SHIFT;  // ? = Shift+/
 
 	keyboard_map[PDFK_SEARCH].key = SDL_SCANCODE_F;
 	keyboard_map[PDFK_SEARCH].mods = KEYB_MOD_CTRL;

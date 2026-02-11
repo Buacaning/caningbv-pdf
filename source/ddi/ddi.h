@@ -22,7 +22,7 @@ struct ddi_s {
 	// ZeroMQ support (required)
 	void *zmq_context;                     // ZMQ context
 	void *zmq_socket;                      // ZMQ PAIR socket
-	char zmq_endpoint[DDI_LONG_STR];       // ZMQ endpoint (e.g., "tcp://127.0.0.1:12345")
+	char zmq_endpoint[DDI_LONG_STR];       // ZMQ endpoint (e.g., "ipc:///tmp/cbv_12345_abc.sock")
 };
 
 void DDI_init(struct ddi_s *ddi);

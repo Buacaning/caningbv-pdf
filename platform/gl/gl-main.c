@@ -3108,7 +3108,7 @@ static void usage(const char *argv0) {
 	fprintf(stderr, "\t-r -\tresolution\n");
 	fprintf(stderr, "\t-I\tinvert colors\n");
 	fprintf(stderr, "\t-D\t<ddi prefix> (file-based DDI)\n");
-	fprintf(stderr, "\t-Z\t<zmq endpoint> (ZeroMQ DDI, e.g., tcp://127.0.0.1:12345)\n");
+	fprintf(stderr, "\t-Z\t<zmq endpoint> (ZeroMQ DDI, e.g., ipc:///tmp/cbv_12345_abc.sock)\n");
 	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
 	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
 	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");

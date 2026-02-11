@@ -3580,16 +3580,19 @@ int main(int argc, char **argv)
 
 			} // while SDL event
 
-			/*
-			 * so that we do not constantly thrash the filesystem
-			 * we only check the ddi after multiple frames
-			 *
-			 */
-			if (check_again) {
-				check_again--;
-			} else {
-				ddi_check();
-				check_again = 5; // 10?  Bigger means longer wait
+			// CBV: Check for DDI messages BEFORE sleep decision for better responsiveness
+			// This ensures BV -> BP communication is fast even when idle
+			// Check both file-based (mode) and ZMQ (socket) modes
+			if ((ddi.mode != DDI_MODE_NONE) || (ddi.zmq_socket != NULL)) {
+				char ddi_data[10240];
+				if (DDI_pickup(&ddi, ddi_data, sizeof(ddi_data)) == 0) {
+					// Got a DDI message - wake up and process it
+					sleepout = 100; // Reset sleep counter
+					if (strlen(ddi_data) >= 2) {
+						flog("%s:%d: DDI received: '%s'\r\n", FL, ddi_data);
+						ddi_process(ddi_data);
+					}
+				}
 			}
 
 			run_processing_loop();
@@ -3599,9 +3602,9 @@ int main(int argc, char **argv)
 
 			if (!(sleepout--)) {
 #ifdef _WIN32
-				Sleep(50);
+				Sleep(5);  // Reduced from 50ms to 5ms for better DDI responsiveness
 #else
-				usleep(50000);
+				usleep(5000);  // Reduced from 50000us to 5000us (5ms)
 #endif
 				sleepout = 0;
 				continue;

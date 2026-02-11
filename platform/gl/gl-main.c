@@ -2884,8 +2884,7 @@ static void on_mouse(int button, int action, int x, int y, int clicks) {
 					if (comp[0]) {
 						char ddi_msg[512];
 						
-						fprintf(stderr, "CBV: DDI mode=%d, detached=%d, prefix=%s\n", ddi.mode, detached, ddi.prefix);
-						fprintf(stderr, "CBV: DDI pickup_name=%s\n", ddi.pickup_name);
+						fprintf(stderr, "CBV: DDI mode=%d, detached=%d, endpoint=%s\n", ddi.mode, detached, ddi.zmq_endpoint);
 						
 						// Send component search
 						snprintf(ddi_msg, sizeof(ddi_msg), "!compsearch:%s", comp);
@@ -3341,22 +3340,18 @@ int main(int argc, char **argv)
 
 	if (fz_optind < argc) anchor = argv[fz_optind++];
 
-	/* ddi setup */
-	flog("DDI setup '%s'\r\n", ddiprefix);
-	DDI_init(&ddi);
+	/* ddi setup - ZeroMQ is required */
+	if (!zmqendpoint) {
+		fprintf(stderr, "CBV: Error: ZMQ endpoint is required (-Z flag). File-based DDI has been removed.\n");
+		exit(1);
+	}
 	
-	// CBV: Use ZMQ if endpoint provided, otherwise fall back to file-based
-	if (zmqendpoint) {
-		flog("CBV: Using ZMQ endpoint: %s\r\n", zmqendpoint);
-		DDI_set_zmq_endpoint(&ddi, zmqendpoint);
-		if (DDI_zmq_init(&ddi) != 0) {
-			flog("CBV: ZMQ init failed, falling back to file-based DDI\r\n");
-			DDI_set_prefix(&ddi, ddiprefix);
-			DDI_set_mode(&ddi, DDI_MODE_SLAVE);
-		}
-	} else {
-		DDI_set_prefix(&ddi, ddiprefix);
-		DDI_set_mode(&ddi, DDI_MODE_SLAVE);
+	flog("CBV: DDI setup with ZMQ endpoint: %s\r\n", zmqendpoint);
+	DDI_init(&ddi);
+	DDI_set_zmq_endpoint(&ddi, zmqendpoint);
+	if (DDI_zmq_init(&ddi) != 0) {
+		fprintf(stderr, "CBV: Error: Failed to initialize ZMQ connection to %s\n", zmqendpoint);
+		exit(1);
 	}
 
 	/*
